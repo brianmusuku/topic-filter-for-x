@@ -1,0 +1,19 @@
+# OS/editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Local secrets and environment files
+.env
+.env.*
+!.env.example
+*.pem
+
+# Dependencies and generated output
+node_modules/
+dist/
+build/
+coverage/

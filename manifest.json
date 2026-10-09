@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "Topic Filter for X",
+  "version": "1.0.0",
+  "description": "Filter your X timeline to the topics you choose, using TypeSafe's Jev model to classify each post.",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://x.com/*",
+    "https://twitter.com/*",
+    "https://api.typesafe.ai/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://x.com/*", "https://twitter.com/*"],
+      "js": [
+        "content/store.js",
+        "content/theme.js",
+        "content/placement.js",
+        "content/panel.js",
+        "content/filter.js",
+        "content/main.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}
