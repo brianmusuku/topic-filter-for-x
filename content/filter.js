@@ -37,6 +37,7 @@
   let statsQueued = false;
   let rescan = () => {};
   let sessionFiltered = 0;
+  let allTimeFiltered = null;
   let sessionCountRequested = false;
   const reportedFiltered = new Set();
 
@@ -218,6 +219,7 @@
       shown: 0,
       hidden: 0,
       filtered: sessionFiltered,
+      filteredTotal: allTimeFiltered,
       waiting: 0,
       total: 0,
     };
@@ -475,6 +477,7 @@
       send({ type: "tlf:get-filtered" }).then((res) => {
         if (res?.ok) {
           sessionFiltered = res.count;
+          allTimeFiltered = res.total;
           emitStats();
         }
       });
@@ -524,6 +527,7 @@
       send({ type: "tlf:record-filtered", keys: filteredNow }).then((res) => {
         if (res?.ok) {
           sessionFiltered = res.count;
+          allTimeFiltered = res.total;
           emitStats();
         }
       });
