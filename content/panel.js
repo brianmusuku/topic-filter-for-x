@@ -323,7 +323,7 @@
     // Footer: running total across every session. Blank until the count has loaded.
     function totalLine() {
       return typeof stats.filteredTotal === "number"
-        ? countText(stats.filteredTotal, "all time")
+        ? `Total posts filtered: ${stats.filteredTotal.toLocaleString()}`
         : "";
     }
 
