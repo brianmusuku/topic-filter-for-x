@@ -11,8 +11,7 @@
       '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3.543 8.96l1.414-1.42L12 14.59l7.043-7.05 1.414 1.42L12 17.41 3.543 8.96z"/></svg>',
     close:
       '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M10.59 12L4.54 5.96l1.42-1.42L12 10.59l6.04-6.05 1.42 1.42L13.41 12l6.05 6.04-1.42 1.42L12 13.41l-6.04 6.05-1.42-1.42L10.59 12z"/></svg>',
-    eye:
-      '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M1.9 12S5.6 5.5 12 5.5 22.1 12 22.1 12 18.4 18.5 12 18.5 1.9 12 1.9 12z"/><circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" stroke-width="2"/></svg>',
+    eye: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M1.9 12S5.6 5.5 12 5.5 22.1 12 22.1 12 18.4 18.5 12 18.5 1.9 12 1.9 12z"/><circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" stroke-width="2"/></svg>',
     eyeOff:
       '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M1.9 12S5.6 5.5 12 5.5 22.1 12 22.1 12 18.4 18.5 12 18.5 1.9 12 1.9 12z"/><circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3.5 3.5l17 17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
   };
@@ -249,103 +248,153 @@
   `;
 
   function createPanel() {
-    const host = document.createElement('div');
-    host.id = 'tlf-host';
-    host.style.cssText = 'position:absolute;left:0;top:0;width:0;z-index:1000;display:none;margin:0;padding:0;border:0;pointer-events:auto;';
-    const root = host.attachShadow({ mode: 'open' });
+    const host = document.createElement("div");
+    host.id = "tlf-host";
+    host.style.cssText =
+      "position:absolute;left:0;top:0;width:0;z-index:1000;display:none;margin:0;padding:0;border:0;pointer-events:auto;";
+    const root = host.attachShadow({ mode: "open" });
     root.innerHTML = `<style>${CSS}</style>${HTML}`;
 
     const $ = (id) => root.getElementById(id);
     const el = {
-      card: $('card'), heading: $('heading'), chevron: $('chevron'), summary: $('summary'), sw: $('switch'),
-      alert: $('alert'), form: $('topicForm'), topicInput: $('topicInput'), addBtn: $('addBtn'),
-      chips: $('chips'), topicHint: $('topicHint'), threshold: $('threshold'), thresholdValue: $('thresholdValue'),
-      keyInput: $('keyInput'), eyeBtn: $('eyeBtn'), foot: $('foot'), footText: $('footText'),
-      busy: $('busy'), busyText: $('busyText'), bodyWrap: $('bodyWrap'),
+      card: $("card"),
+      heading: $("heading"),
+      chevron: $("chevron"),
+      summary: $("summary"),
+      sw: $("switch"),
+      alert: $("alert"),
+      form: $("topicForm"),
+      topicInput: $("topicInput"),
+      addBtn: $("addBtn"),
+      chips: $("chips"),
+      topicHint: $("topicHint"),
+      threshold: $("threshold"),
+      thresholdValue: $("thresholdValue"),
+      keyInput: $("keyInput"),
+      eyeBtn: $("eyeBtn"),
+      foot: $("foot"),
+      footText: $("footText"),
+      busy: $("busy"),
+      busyText: $("busyText"),
+      bodyWrap: $("bodyWrap"),
     };
 
     // Keep keystrokes away from X's global keyboard shortcuts (j, k, n, ...).
-    ['keydown', 'keyup', 'keypress'].forEach((t) => root.addEventListener(t, (e) => e.stopPropagation()));
+    ["keydown", "keyup", "keypress"].forEach((t) =>
+      root.addEventListener(t, (e) => e.stopPropagation()),
+    );
 
-    let stats = { active: false, routeOk: true, shown: 0, hidden: 0, filtered: 0, waiting: 0, total: 0 };
+    let stats = {
+      active: false,
+      routeOk: true,
+      shown: 0,
+      hidden: 0,
+      filtered: 0,
+      filteredTotal: null,
+      waiting: 0,
+      total: 0,
+    };
     let errorMessage = null;
     let hintOverride = null;
     let resizeCb = () => {};
 
-    new ResizeObserver(() => resizeCb(el.card.getBoundingClientRect().height)).observe(el.card);
+    new ResizeObserver(() =>
+      resizeCb(el.card.getBoundingClientRect().height),
+    ).observe(el.card);
 
     // ---- rendering --------------------------------------------------------
     function summaryLine(s) {
       if (errorMessage) return { text: errorMessage.short, error: true };
-      if (!s.apiKey) return { text: 'Add your API key to start' };
-      if (!s.topics.length) return { text: 'Add a topic to start' };
-      if (!s.enabled) return { text: 'Off' };
-      if (!stats.routeOk) return { text: 'Not filtering on this page' };
-      return { text: filteredLine() };
+      if (!s.apiKey) return { text: "Add your API key to start" };
+      if (!s.topics.length) return { text: "Add a topic to start" };
+      if (!s.enabled) return { text: "Off" };
+      if (!stats.routeOk) return { text: "Not filtering on this page" };
+      return { text: sessionLine() };
     }
 
-    function filteredLine() {
-      const n = stats.filtered ?? stats.hidden;
-      return `${n} ${n === 1 ? 'tweet' : 'tweets'} filtered`;
+    const countText = (n, suffix) =>
+      `${n.toLocaleString()} ${n === 1 ? "tweet" : "tweets"} filtered ${suffix}`;
+
+    // Header: posts filtered since the browser started.
+    function sessionLine() {
+      return countText(stats.filtered ?? stats.hidden, "this session");
+    }
+
+    // Footer: running total across every session. Blank until the count has loaded.
+    function totalLine() {
+      return typeof stats.filteredTotal === "number"
+        ? countText(stats.filteredTotal, "all time")
+        : "";
     }
 
     function render() {
       const s = store.state;
-      el.card.classList.toggle('open', s.expanded);
-      el.heading.setAttribute('aria-expanded', String(s.expanded));
-      el.chevron.setAttribute('aria-expanded', String(s.expanded));
-      el.chevron.setAttribute('aria-label', s.expanded ? 'Hide settings' : 'Show settings');
-      el.bodyWrap.toggleAttribute('inert', !s.expanded);
+      el.card.classList.toggle("open", s.expanded);
+      el.heading.setAttribute("aria-expanded", String(s.expanded));
+      el.chevron.setAttribute("aria-expanded", String(s.expanded));
+      el.chevron.setAttribute(
+        "aria-label",
+        s.expanded ? "Hide settings" : "Show settings",
+      );
+      el.bodyWrap.toggleAttribute("inert", !s.expanded);
 
-      el.sw.setAttribute('aria-checked', String(s.enabled));
+      el.sw.setAttribute("aria-checked", String(s.enabled));
 
       const sum = summaryLine(s);
       el.summary.textContent = sum.text;
-      el.summary.classList.toggle('error', !!sum.error);
+      el.summary.classList.toggle("error", !!sum.error);
 
       el.alert.hidden = !errorMessage;
       if (errorMessage) el.alert.textContent = errorMessage.long;
 
       // Topics
-      el.chips.textContent = '';
+      el.chips.textContent = "";
       for (const topic of s.topics) {
-        const li = document.createElement('li');
-        li.className = 'chip';
-        const label = document.createElement('span');
+        const li = document.createElement("li");
+        li.className = "chip";
+        const label = document.createElement("span");
         label.textContent = topic;
-        const rm = document.createElement('button');
-        rm.type = 'button';
+        const rm = document.createElement("button");
+        rm.type = "button";
         rm.innerHTML = ICON.close;
-        rm.setAttribute('aria-label', `Remove ${topic}`);
-        rm.addEventListener('click', () => store.set({ topics: store.state.topics.filter((t) => t !== topic) }));
+        rm.setAttribute("aria-label", `Remove ${topic}`);
+        rm.addEventListener("click", () =>
+          store.set({ topics: store.state.topics.filter((t) => t !== topic) }),
+        );
         li.append(label, rm);
         el.chips.append(li);
       }
       el.addBtn.disabled = !el.topicInput.value.trim();
       if (hintOverride) {
         el.topicHint.textContent = hintOverride;
-        el.topicHint.classList.add('error');
+        el.topicHint.classList.add("error");
       } else {
-        el.topicHint.classList.remove('error');
+        el.topicHint.classList.remove("error");
         el.topicHint.textContent = s.topics.length
-          ? 'Posts that match any of these topics stay in your timeline.'
+          ? "Posts that match any of these topics stay in your timeline."
           : 'Be specific: "Formula 1 race results" works better than "sports".';
       }
 
       // Threshold
       const pct = ((s.threshold - 10) / (95 - 10)) * 100;
       el.threshold.value = String(s.threshold);
-      el.threshold.style.setProperty('--pct', `${pct}%`);
+      el.threshold.style.setProperty("--pct", `${pct}%`);
       el.thresholdValue.textContent = `${s.threshold}%`;
 
       // API key (don't fight the user while they type)
-      if (root.activeElement !== el.keyInput && el.keyInput.value !== s.apiKey) el.keyInput.value = s.apiKey;
+      if (root.activeElement !== el.keyInput && el.keyInput.value !== s.apiKey)
+        el.keyInput.value = s.apiKey;
 
       // Footer
-      const live = s.enabled && s.apiKey && s.topics.length && stats.routeOk && !errorMessage?.blocking;
+      const live =
+        s.enabled &&
+        s.apiKey &&
+        s.topics.length &&
+        stats.routeOk &&
+        !errorMessage?.blocking;
       el.foot.hidden = !live;
       if (live) {
-        el.footText.textContent = filteredLine();
+        el.footText.textContent = totalLine();
         el.busy.hidden = stats.waiting === 0;
         el.busyText.textContent = `Checking ${stats.waiting}`;
       }
@@ -353,10 +402,10 @@
 
     // ---- events -----------------------------------------------------------
     const toggleOpen = () => store.set({ expanded: !store.state.expanded });
-    el.heading.addEventListener('click', toggleOpen);
-    el.chevron.addEventListener('click', toggleOpen);
+    el.heading.addEventListener("click", toggleOpen);
+    el.chevron.addEventListener("click", toggleOpen);
 
-    el.sw.addEventListener('click', () => {
+    el.sw.addEventListener("click", () => {
       const on = !store.state.enabled;
       store.set({ enabled: on });
       if (on && !store.state.apiKey) {
@@ -365,48 +414,55 @@
       }
     });
 
-    el.topicInput.addEventListener('input', () => {
+    el.topicInput.addEventListener("input", () => {
       hintOverride = null;
       render();
     });
-    el.form.addEventListener('submit', (e) => {
+    el.form.addEventListener("submit", (e) => {
       e.preventDefault();
-      const topic = el.topicInput.value.replace(/\s+/g, ' ').trim();
+      const topic = el.topicInput.value.replace(/\s+/g, " ").trim();
       if (!topic) return;
       const topics = store.state.topics;
       if (topics.some((t) => t.toLowerCase() === topic.toLowerCase())) {
-        hintOverride = 'That topic is already on your list.';
+        hintOverride = "That topic is already on your list.";
       } else if (topics.length >= MAX_TOPICS) {
         hintOverride = `You can add up to ${MAX_TOPICS} topics.`;
       } else {
         hintOverride = null;
-        el.topicInput.value = '';
+        el.topicInput.value = "";
         store.set({ topics: [...topics, topic] });
       }
       render();
     });
 
-    el.threshold.addEventListener('input', () => store.set({ threshold: Number(el.threshold.value) }, { persist: false }));
-    el.threshold.addEventListener('change', () => store.set({ threshold: Number(el.threshold.value) }));
+    el.threshold.addEventListener("input", () =>
+      store.set({ threshold: Number(el.threshold.value) }, { persist: false }),
+    );
+    el.threshold.addEventListener("change", () =>
+      store.set({ threshold: Number(el.threshold.value) }),
+    );
 
     let keyTimer;
     const saveKey = () => {
       clearTimeout(keyTimer);
       store.set({ apiKey: el.keyInput.value.trim() });
     };
-    el.keyInput.addEventListener('input', () => {
+    el.keyInput.addEventListener("input", () => {
       clearTimeout(keyTimer);
       keyTimer = setTimeout(saveKey, 500);
     });
-    el.keyInput.addEventListener('change', saveKey);
-    el.keyInput.addEventListener('blur', saveKey);
+    el.keyInput.addEventListener("change", saveKey);
+    el.keyInput.addEventListener("blur", saveKey);
 
-    el.eyeBtn.addEventListener('click', () => {
-      const show = el.keyInput.type === 'password';
-      el.keyInput.type = show ? 'text' : 'password';
+    el.eyeBtn.addEventListener("click", () => {
+      const show = el.keyInput.type === "password";
+      el.keyInput.type = show ? "text" : "password";
       el.eyeBtn.innerHTML = show ? ICON.eyeOff : ICON.eye;
-      el.eyeBtn.setAttribute('aria-pressed', String(show));
-      el.eyeBtn.setAttribute('aria-label', show ? 'Hide API key' : 'Show API key');
+      el.eyeBtn.setAttribute("aria-pressed", String(show));
+      el.eyeBtn.setAttribute(
+        "aria-label",
+        show ? "Hide API key" : "Show API key",
+      );
     });
 
     store.subscribe(render);

@@ -53,6 +53,13 @@ scores are cached, moving the slider does not make another API request.
 Turn the switch off to restore the normal timeline. The chevron collapses the
 settings card.
 
+The card keeps two counters. The line under the title shows how many posts were
+filtered **this session** (since the browser started). The line at the bottom of
+the settings shows how many were filtered **all time**. A post is counted once
+per session no matter how often it scrolls back into view, and the all-time
+total adds up each session's count. All X tabs count into the same numbers; a
+background tab shows the latest values the next time it filters a post.
+
 ## Privacy and cost
 
 The extension sends the text of posts it classifies to TypeSafe, together with
@@ -60,6 +67,9 @@ the author's handle and available image alt text. The TypeSafe API key is
 stored in `chrome.storage.local` for this browser and is used by the extension
 service worker; it is not placed in the X page. Review TypeSafe's policies
 before using the extension with sensitive content.
+
+The all-time counter is a single number saved in `chrome.storage.local`; the
+session counter lives in `chrome.storage.session`. Neither is sent anywhere.
 
 There is no analytics or telemetry code in this repository. Classification
 requests are made for new readable posts while filtering is active. A narrow
@@ -83,17 +93,17 @@ background.js ───── sends one Jev question per topic to TypeSafe
 cached scores ────── reused when the threshold changes
 ```
 
-| File | Purpose |
-| --- | --- |
-| `manifest.json` | Manifest V3 permissions, service worker, content scripts, and icons. |
-| `background.js` | Calls TypeSafe's `POST /v1/systemone` endpoint and keeps the API key out of the page context. |
-| `content/filter.js` | Extracts posts, manages the request queue/cache, and hides or reveals timeline cells. |
-| `content/panel.js` | Renders the settings card in a shadow DOM. |
-| `content/placement.js` | Places the card below X's search box. |
-| `content/store.js` | Persists settings and synchronizes them across tabs. |
-| `content/theme.js` | Detects X's theme, accent color, and font. |
-| `content/main.js` | Starts the panel, placement, and filtering lifecycle. |
-| `icons/` | Extension icons used by the browser. |
+| File                   | Purpose                                                                                                                                          |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `manifest.json`        | Manifest V3 permissions, service worker, content scripts, and icons.                                                                             |
+| `background.js`        | Calls TypeSafe's `POST /v1/systemone` endpoint, keeps the API key out of the page context, and keeps the session and all-time filtered counters. |
+| `content/filter.js`    | Extracts posts, manages the request queue/cache, and hides or reveals timeline cells.                                                            |
+| `content/panel.js`     | Renders the settings card in a shadow DOM.                                                                                                       |
+| `content/placement.js` | Places the card below X's search box.                                                                                                            |
+| `content/store.js`     | Persists settings and synchronizes them across tabs.                                                                                             |
+| `content/theme.js`     | Detects X's theme, accent color, and font.                                                                                                       |
+| `content/main.js`      | Starts the panel, placement, and filtering lifecycle.                                                                                            |
+| `icons/`               | Extension icons used by the browser.                                                                                                             |
 
 The model question wording is defined in `buildQuestions()` in
 `background.js`. X changes its markup periodically; the extension currently
