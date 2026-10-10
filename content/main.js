@@ -101,7 +101,9 @@
       lastPath = location.pathname;
       filter.resetPage();
     }
-    TLF.placement.ensure(panel.host);
+    // 'pending' means the search box isn't ready yet; look again shortly
+    // instead of waiting for X to happen to change something.
+    if (TLF.placement.ensure(panel.host) === 'pending') setTimeout(() => schedule(), 200);
     TLF.theme.apply(panel.host);
     TLF.placement.layout(panel.host);
     filter.scan();
