@@ -71,7 +71,9 @@
     // Keep X's tweet article and author row intact. Hide the post body,
     // attached media/cards and action bar, plus their immediate wrappers.
     style.textContent = [
-      '[data-tlf="wait"]{display:none !important}',
+      // Keep the cell's box while a post is being classified. display:none makes X measure
+      // it as 0px tall and stack the next posts on top of it. Hide the contents only.
+      '[data-tlf="wait"]{opacity:0 !important;visibility:hidden !important;pointer-events:none !important}',
       '[data-tlf="collapse"] article[data-testid="tweet"] [data-testid="socialContext"], [data-tlf="collapse"] article[data-testid="tweet"] [data-testid="promotedIndicator"]{display:none !important}',
       '[data-tlf="collapse"] article[data-testid="tweet"] [data-testid="tweetText"], [data-tlf="collapse"] article[data-testid="tweet"] div:has(> [data-testid="tweetText"]){display:none !important}',
       '[data-tlf="collapse"] article[data-testid="tweet"] [data-testid="reply"], [data-tlf="collapse"] article[data-testid="tweet"] div:has(> [data-testid="reply"]){display:none !important}',
@@ -371,10 +373,11 @@
     btn.dataset.key = key;
     btn.dataset.tlfKey = key;
     btn.style.color = `rgb(${TLF.theme.accent()})`;
-    const fontSource =
-      article.querySelector('[data-testid="tweetText"]') || article;
-    const tweetFont = getComputedStyle(fontSource);
-    btn.style.font = tweetFont.font;
+    if (!btn.style.font) {
+      const fontSource =
+        article.querySelector('[data-testid="tweetText"]') || article;
+      btn.style.font = getComputedStyle(fontSource).font;
+    }
     const open = opened.has(key);
     btn.textContent = open ? "Hide" : "Show";
     btn.setAttribute("aria-expanded", String(open));
