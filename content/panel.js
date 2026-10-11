@@ -309,7 +309,7 @@
     const host = document.createElement("div");
     host.id = "tlf-host";
     host.style.cssText =
-      "position:absolute;left:0;top:0;width:0;z-index:1000;display:none;margin:0;padding:0;border:0;pointer-events:auto;";
+      "position:absolute;left:0;top:0;width:0;display:none;margin:0;padding:0;border:0;pointer-events:auto;";
     const root = host.attachShadow({ mode: "open" });
     root.innerHTML = `<style>${CSS}</style>${HTML}`;
 
