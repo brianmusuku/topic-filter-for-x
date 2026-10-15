@@ -61,7 +61,7 @@
     else held = null;
   }
 
-  // Call BEFORE making changes that can alter post heights.
+  // The filter calls this BEFORE it collapses/expands a post.
   function hold() {
     holdUntil = performance.now() + HOLD_MS;
     if (!held) held = pickAnchor();
@@ -96,25 +96,31 @@
   }
 
   function tick() {
-    hold();
+    // No unconditional hold() here: X reflows constantly for its own reasons
+    // (composer, dialogs, dropdowns) and we must not fight that. The filter
+    // calls hold() itself, right before it changes a post's layout.
     if (location.pathname !== lastPath) {
       lastPath = location.pathname;
       filter.resetPage();
     }
     // 'pending' means the search box isn't ready yet; look again shortly
     // instead of waiting for X to happen to change something.
-    if (TLF.placement.ensure(panel.host) === 'pending') setTimeout(() => schedule(), 200);
+    if (TLF.placement.ensure(panel.host) === "pending")
+      setTimeout(() => schedule(), 200);
     TLF.theme.apply(panel.host);
     TLF.placement.layout(panel.host);
     filter.scan();
   }
 
-  const filter = TLF.createFilter({ onRescan: () => schedule(true) });
+  const filter = TLF.createFilter({
+    onRescan: () => schedule(true),
+    onBeforeLayoutChange: hold,
+  });
   filter.onStats(panel.setStats);
   filter.onError(panel.setError);
 
   TLF.store.subscribe((changed) => {
-    if ('apiKey' in changed) filter.resetAuth();
+    if ("apiKey" in changed) filter.resetAuth();
     schedule(true);
   });
   panel.onResize((h) => {
@@ -125,18 +131,22 @@
   function addedPosts(records) {
     for (const r of records) {
       for (const n of r.addedNodes) {
-        if (n.nodeType === 1 && (n.matches(POST) || n.querySelector(POST))) return true;
+        if (n.nodeType === 1 && (n.matches(POST) || n.querySelector(POST)))
+          return true;
       }
     }
     return false;
   }
 
   // X mutates its DOM constantly; only new posts need to be handled right away.
-  new MutationObserver((records) => schedule(addedPosts(records))).observe(document.body, {
-    childList: true,
-    subtree: true,
-  });
-  addEventListener('resize', () => schedule());
+  new MutationObserver((records) => schedule(addedPosts(records))).observe(
+    document.body,
+    {
+      childList: true,
+      subtree: true,
+    },
+  );
+  addEventListener("resize", () => schedule());
 
   tick();
 })();

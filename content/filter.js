@@ -36,6 +36,7 @@
   let applied = false;
   let statsQueued = false;
   let rescan = () => {};
+  let beforeLayoutChange = () => {};
   let sessionFiltered = 0;
   let allTimeFiltered = null;
   let sessionCountRequested = false;
@@ -199,6 +200,7 @@
 
   function clearAll() {
     if (!applied) return;
+    beforeLayoutChange();
     document
       .querySelectorAll("[data-tlf]")
       .forEach((n) => n.removeAttribute("data-tlf"));
@@ -457,11 +459,16 @@
   function setMediaCollapsed(article, collapsed) {
     const want = collapsed ? mediaTargets(article) : new Set();
     for (const el of article.querySelectorAll("[data-tlf-media]")) {
-      if (!want.has(el)) el.removeAttribute("data-tlf-media");
+      if (!want.has(el)) {
+        beforeLayoutChange();
+        el.removeAttribute("data-tlf-media");
+      }
     }
     for (const el of want) {
-      if (!el.hasAttribute("data-tlf-media"))
+      if (!el.hasAttribute("data-tlf-media")) {
+        beforeLayoutChange();
         el.setAttribute("data-tlf-media", "");
+      }
     }
   }
 
@@ -510,15 +517,20 @@
         revealButton(article, info.key);
         const mark = opened.has(info.key) ? "open" : "collapse";
         setMediaCollapsed(article, mark === "collapse");
-        if (cell.getAttribute("data-tlf") !== mark)
+        if (cell.getAttribute("data-tlf") !== mark) {
+          beforeLayoutChange();
           cell.setAttribute("data-tlf", mark);
+        }
       } else {
         removeReveal(article);
         setMediaCollapsed(article, false);
         if (state === "wait") {
-          if (cell.getAttribute("data-tlf") !== "wait")
+          if (cell.getAttribute("data-tlf") !== "wait") {
+            beforeLayoutChange();
             cell.setAttribute("data-tlf", "wait");
+          }
         } else if (cell.hasAttribute("data-tlf")) {
+          beforeLayoutChange();
           cell.removeAttribute("data-tlf");
         }
       }
@@ -545,8 +557,9 @@
     emitStats();
   }
 
-  TLF.createFilter = function createFilter({ onRescan }) {
+  TLF.createFilter = function createFilter({ onRescan, onBeforeLayoutChange }) {
     rescan = onRescan || (() => {});
+    beforeLayoutChange = onBeforeLayoutChange || (() => {});
     return {
       scan,
       onStats: (fn) => listeners.stats.add(fn),
