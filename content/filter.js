@@ -93,7 +93,7 @@
       '[data-tlf="collapse"]{height:auto !important;min-height:0 !important;padding:0 !important;margin:0 !important}',
       '[data-tlf="collapse"] > div:first-child{border:0 !important;box-shadow:none !important}',
       '[data-tlf="collapse"] article[data-testid="tweet"]{padding-bottom:8px !important;border-bottom:1px solid color-mix(in srgb, currentColor 10%, transparent) !important;box-shadow:none !important}',
-      ".tlf-reveal{display:inline-flex !important;align-items:center !important;padding:4px 8px !important;border:0 !important;border-radius:9999px !important;background:none !important;background-color:transparent !important;font:500 13px/16px TwitterChirp,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif !important;cursor:pointer !important;flex-shrink:0 !important;white-space:nowrap !important;margin:0 !important;align-self:center !important;position:static !important;transform:none !important}",
+      ".tlf-reveal{display:inline-flex !important;align-items:center !important;justify-content:center !important;box-sizing:border-box !important;height:20px !important;padding:0 8px !important;border:0 !important;border-radius:9999px !important;background:none !important;background-color:transparent !important;font:500 13px/16px TwitterChirp,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif !important;cursor:pointer !important;flex-shrink:0 !important;white-space:nowrap !important;margin:0 !important;align-self:center !important;position:static !important;transform:none !important}",
       ".tlf-reveal:hover{text-decoration:underline}",
       ".tlf-reveal:focus-visible{outline:2px solid currentColor;outline-offset:1px}",
     ].join("");
