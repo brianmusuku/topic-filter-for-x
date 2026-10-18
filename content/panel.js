@@ -173,12 +173,12 @@
     .row { display: flex; align-items: flex-start; gap: 8px; padding: 0 4px 0 14px; border-bottom: 1px solid var(--border); }
     .row:last-child { border-bottom: 0; }
     .tn {
-      flex: 1; min-width: 0; padding: 8px 0; font-size: 14px; line-height: 20px; overflow-wrap: anywhere;
+      flex: 1; min-width: 0; padding: 8px 0; font-size: 13px; line-height: 18px; overflow-wrap: anywhere;
       display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
     }
     .row button {
       flex: none; display: inline-flex; align-items: center; justify-content: center;
-      width: 28px; height: 28px; margin-top: 4px; border-radius: 50%; color: var(--sub);
+      width: 28px; height: 28px; margin-top: 3px; border-radius: 50%; color: var(--sub);
       transition: background-color 0.15s ease;
     }
     .row button:hover { background: var(--hover); }
