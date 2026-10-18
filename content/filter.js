@@ -108,12 +108,18 @@
   };
 
   // Text with emoji <img alt="..."> flattened back to characters.
-  function readText(node) {
+  // Depth guard (max 50) prevents stack overflow on pathological DOM trees.
+  const READTEXT_MAX_DEPTH = 50;
+  function readText(node, depth = 0) {
+    if (depth > READTEXT_MAX_DEPTH) return "";
     let out = "";
     node.childNodes.forEach((c) => {
       if (c.nodeType === 3) out += c.nodeValue;
       else if (c.nodeType === 1)
-        out += c.tagName === "IMG" ? c.getAttribute("alt") || "" : readText(c);
+        out +=
+          c.tagName === "IMG"
+            ? c.getAttribute("alt") || ""
+            : readText(c, depth + 1);
     });
     return out;
   }
