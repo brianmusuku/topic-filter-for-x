@@ -8,6 +8,12 @@
 // Using rendered size (rather than counting children or looking for other
 // sidebar sections) means it doesn't matter which sections a page has, and the
 // host can never end up inside the search component or above it.
+//
+// Pages that keep their search box elsewhere (Search, Explore) use a second
+// rule: join the sidebar's sections. There the card goes inside the group X
+// wraps them in — on long-scrolling pages like Search that group is sticky, so
+// a card left outside it stays behind in the flow and the sliding panels cover
+// it.
 (() => {
   const TLF = window.TLF;
   const SIDEBAR = '[data-testid="sidebarColumn"]';
@@ -75,7 +81,31 @@
     return anchor;
   }
 
-  /** @returns {true|false|'pending'} placed / no sidebar / waiting for search */
+  // Where the card goes on a page without a sidebar search box. The first
+  // child of the section stack with content is the panel group — the empty
+  // divs X leaves in unused slots (and our own host, which has no light-DOM
+  // children) don't count. A sticky or absolute group carries the sections
+  // with it while the page scrolls, so the card has to live inside it;
+  // anything else is a section in normal flow, and the card becomes the
+  // sibling right above it.
+  function panelSlot(stack, host) {
+    for (const child of stack.children) {
+      if (isSpacer(child)) continue;
+      const pos = getComputedStyle(child).position;
+      const parent = pos === "sticky" || pos === "absolute" ? child : stack;
+      if (!parent.children.length) return null; // sections not rendered yet
+      const first = parent.firstElementChild;
+      return {
+        parent,
+        // Our own host may already sit first; aim past it so a settled card
+        // reads as correct instead of being re-inserted every pass.
+        before: first === host ? first.nextElementSibling : first,
+      };
+    }
+    return null; // sections not rendered yet
+  }
+
+  /** @returns {true|false|'pending'} placed / no sidebar / waiting for the search box or sections */
   function ensure(host) {
     const sidebar = document.querySelector(SIDEBAR);
     if (!sidebar) {
@@ -109,24 +139,32 @@
       stack = block.parentElement;
     } else {
       // No search in the sidebar. Either it hasn't rendered yet (navigating),
-      // or this page keeps its search box elsewhere (e.g. Explore). Wait a
+      // or this page keeps its search box elsewhere (Search, Explore). Wait a
       // moment so the card doesn't flash above the search box on its way in.
       if (!missingSince) missingSince = performance.now();
       if (performance.now() - missingSince < GRACE_MS) {
         host.style.display = "none";
         return "pending";
       }
-      stack = topOfSidebar(sidebar);
-      before = stack.firstChild;
+      const spot = panelSlot(topOfSidebar(sidebar), host);
+      if (!spot) {
+        host.style.display = "none";
+        return "pending";
+      }
+      stack = spot.parent;
+      before = spot.before;
     }
 
     const anchor = block && insertionAnchor(block, host);
     const correct = block
       ? host.parentElement === stack && host.previousElementSibling === anchor
-      : host.parentElement === stack && stack.firstElementChild === host;
+      : before
+        ? host.parentElement === stack && host.nextElementSibling === before
+        : host.parentElement === stack && stack.firstElementChild === host;
     if (!correct) {
       if (block) stack.insertBefore(host, anchor.nextSibling);
-      else stack.insertBefore(host, before);
+      else if (before) stack.insertBefore(host, before);
+      else stack.insertBefore(host, stack.firstChild);
     }
 
     host.style.position = "static";
